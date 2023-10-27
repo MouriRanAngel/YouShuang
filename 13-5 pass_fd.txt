@@ -1,0 +1,53 @@
+static const int CONTROL_LEN = CMSG_LEN(sizeof(int));
+
+// Send a file descriptor.
+// The fd parameter is the UNIX domain socket used to transmit information.
+// The fd_to_send parameter is the file descriptor to be sent.
+void send_fd(int fd, int fd_to_send) {
+
+    struct iovec iov[1];
+    struct msghdr msg;
+
+    char buf[0];
+
+    iov[0].iov_base = buf;
+    iov[0].iov_len = 1;
+
+    msg.msg_name = nullptr;
+    msg.msg_namelen = 0;
+    msg.msg_iov = iov;
+    msg.msg_iovlen = 1;
+
+    cmsghdr cm;
+
+    cm.cmsg_len = CONTROL_LEN;
+    cm.cmsg_level = SOL_SOCKET;
+    cm.cmsg_type = SCM_RIGHTS;
+
+    *(int*) CMSG_DATA(&cm) = fd_to_send;
+
+    msg.msg_control = &cm;  // set auxiliary data.
+    msg.msg_controllen = CONTROL_LEN;
+
+    sendmsg(fd, &msg, 0);
+}
+
+`send_fd` 函数用于通过 UNIX 域套接字发送文件描述符。
+
+它有两个参数：
+- `fd`：用于传输信息的 UNIX 域套接字。
+- `fd_to_send`：要发送的文件描述符。
+
+该函数首先定义了一个常量 `CONTROL_LEN`，它表示辅助数据的长度，使用 `CMSG_LEN` 宏计算得到。
+
+然后，函数初始化了一个 `iovec` 结构的数组 `iov`，用于指定要发送的数据。在这种情况下，它只需要一个 `iovec` 结构，它指向一个大小为 0 的缓冲区 `buf`。这是因为在这种情况下，实际发送的数据并不重要，因为文件描述符作为辅助数据发送。
+
+接下来，函数初始化了一个 `msghdr` 结构 `msg`，用于指定要发送的消息。`msg_name` 和 `msg_namelen` 字段设置为 `nullptr` 和 0，因为在这种情况下它们不需要。`msg_iov` 字段设置为 `iov` 数组，`msg_iovlen` 字段设置为数组中的 `iovec` 结构数量。
+
+然后，函数初始化了一个 `cmsghdr` 结构 `cm`，用于指定要发送的辅助数据。`cmsg_len` 字段设置为 `CONTROL_LEN`，表示辅助数据的长度。`cmsg_level` 字段设置为 `SOL_SOCKET`，表示辅助数据与套接字层相关。`cmsg_type` 字段设置为 `SCM_RIGHTS`，表示辅助数据包含文件描述符。
+
+要发送的文件描述符存储在 `cmsghdr` 结构的数据部分中，使用 `CMSG_DATA` 宏。在这种情况下，文件描述符被存储为整数，因此将指向 `cmsghdr` 结构的数据部分的指针转换为整数指针，并将文件描述符分配给它。
+
+最后，函数将 `msg` 结构的 `msg_control` 字段设置为指向 `cm` 结构的指针，`msg_controllen` 字段设置为 `CONTROL_LEN`。
+
+然后调用 `sendmsg` 函数通过 UNIX 域套接字发送消息。`fd` 参数是套接字描述符，`msg` 参数是指向 `msghdr` 结构的指针，`0` 参数是标志，表示没有特殊选项。
