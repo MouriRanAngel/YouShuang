@@ -1,5 +1,4 @@
-		  YouShuang 
-		
-	Linux high-performance server programming
+	
+	Linux high-performance server programming / YouShuang  
                   
-                   --- Source code by morian.  
+                                      --- Source code by morian.   
